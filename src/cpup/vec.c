@@ -11,13 +11,21 @@ typedef struct {
 
 void* vec_init(unsigned int _capacity, size_t _elementSize) {
     unsigned int capacity = _capacity ? _capacity : 1;
-    vec_info* info = malloc( sizeof(vec_info) + (capacity * _elementSize));
+    vec_info* info = calloc(1, sizeof(vec_info) + (capacity * _elementSize));
 
     info->capacity = capacity;
     info->count = 0;
     info->elementSize = _elementSize;
 
     return info + 1;
+}
+
+void* vec_init_with_count(unsigned int _capacity, size_t _elementSize, unsigned int _count) {
+    unsigned int capacity = (_capacity < _count) ? _count : _capacity;
+    void* refList = vec_init(capacity, _elementSize);
+    vec_info* info = (vec_info*)refList - 1;
+    info->count = _count;
+    return refList;
 }
 
 void vec_free(void* _refList) {
@@ -38,6 +46,7 @@ void vec_add(void* _refList, const void* _value) {
 
     if (info->count >= info->capacity)
     {
+        unsigned int oldCapacity = info->capacity;
         info->capacity = info->capacity * 2;
 
         void* newLocation = realloc( info,
@@ -51,6 +60,11 @@ void vec_add(void* _refList, const void* _value) {
         else
         {
             info = newLocation;
+            memset(
+                ((char*)(info + 1)) + (oldCapacity * info->elementSize),
+                0,
+                (info->capacity - oldCapacity) * info->elementSize
+            );
         }
 
         // if realloc moved the memory then we need to change where the _refList is pointing
@@ -66,6 +80,31 @@ void vec_add(void* _refList, const void* _value) {
     info->count++;
 
     //printf("count: %i capacity: %i\n", info->count, info->capacity);
+}
+
+void vec_resize(void* _refList, unsigned int _count) {
+    vec_info* info = ((vec_info*)(*((void**)_refList))) - 1;
+
+    if (_count > info->capacity) {
+        while (info->capacity < _count) {
+            info->capacity = info->capacity * 2;
+        }
+
+        void* newLocation = realloc(
+            info,
+            sizeof(vec_info) + (info->capacity * info->elementSize)
+        );
+
+        if (newLocation == NULL) {
+            printf("vec failed to realloc\n");
+            return;
+        }
+
+        info = newLocation;
+        *((void**)_refList) = info + 1;
+    }
+
+    info->count = _count;
 }
 
 void vec_append(void* _refList, void* _array, size_t _elementCount)

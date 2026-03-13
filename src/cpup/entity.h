@@ -2,7 +2,6 @@
 #include "math.h"
 #include "model.h"
 #include "shader.h"
-#include "canis.h"
 
 typedef struct {
     Vector3 position;
@@ -12,6 +11,7 @@ typedef struct {
 
 struct Image;
 struct Shader;
+typedef struct AppContext AppContext;
 
 typedef struct Entity Entity; 
 
